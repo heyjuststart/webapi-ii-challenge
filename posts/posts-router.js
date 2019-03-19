@@ -26,7 +26,9 @@ router.get('/:id', async (req, res) => {
     if (post) {
       res.status(200).json(post);
     } else {
-      res.status(404).json({ message: 'The post with the specified ID does not exist.' });
+      res
+        .status(404)
+        .json({ message: 'The post with the specified ID does not exist.' });
     }
   } catch (error) {
     // log error to database
@@ -40,13 +42,11 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     if (!req.body.title || !req.body.contents) {
-      return res
-        .status(400)
-        .json({
-          errorMessage: 'Please provide title and contents for the post'
-        });
+      return res.status(400).json({
+        errorMessage: 'Please provide title and contents for the post'
+      });
     }
-    const post = await Posts.add(req.body);
+    const post = await Posts.insert(req.body);
     res.status(201).json(post);
   } catch (error) {
     console.log(error);
@@ -58,11 +58,14 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const count = await Posts.remove(req.params.id);
-    if (count > 0) {
-      return res.status(200);
+    const maybePost = (await Posts.findById(req.params.id))[0];
+    if (maybePost) {
+      await Posts.remove(req.params.id);
+      return res.status(200).json(maybePost);
     } else {
-      return res.status(404).json({ message: 'The post with the specified ID does not exist.' });
+      return res
+        .status(404)
+        .json({ message: 'The post with the specified ID does not exist.' });
     }
   } catch (error) {
     // log error to database
@@ -74,15 +77,23 @@ router.delete('/:id', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-  if(!req.body.title || !req.body.content) {
-    return res.status(400).json({ errorMessage: 'Please provide title and contents for the post.' });
+  if (!req.body.title || !req.body.contents) {
+    return res
+      .status(400)
+      .json({
+        errorMessage: 'Please provide title and contents for the post.'
+      });
   }
   try {
     const post = await Posts.update(req.params.id, req.body);
+    console.log(post);
     if (post) {
-      res.status(200).json(post);
+      const updatedPost = (await Posts.findById(req.params.id))[0];
+      res.status(200).json(updatedPost);
     } else {
-      res.status(404).json({ error: 'The post with the specified ID does not exist.' });
+      res
+        .status(404)
+        .json({ error: 'The post with the specified ID does not exist.' });
     }
   } catch (error) {
     // log error to database
